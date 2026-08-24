@@ -5,7 +5,7 @@ const fs = require('fs');
 const WIDGET_URL =
   'https://oas.earthnetworks.com/widget/ResOASWidget.html?widgetId=53a22493-1a2e-4968-9974-e32868ef58a5';
 
-const LOCATION = 'Broadneck High School';
+const LOCATION = 'Broadneck Area Fields';
 
 async function sendAlertEmail(previousStatus, currentStatus, connectionStatus) {
   const gmailUser = process.env.GMAIL_USER;
