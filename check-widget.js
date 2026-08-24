@@ -39,9 +39,9 @@ async function checkWidget() {
       throw new Error('Could not find the Alerts section on the page.');
     }
 
-    const alertStatus = lines[alertLabelPosition + 1];
+    const currentStatus = lines[alertLabelPosition + 1];
 
-    if (!alertStatus) {
+    if (!currentStatus) {
       throw new Error('Could not determine the current alert status.');
     }
 
@@ -55,16 +55,36 @@ async function checkWidget() {
       connectionStatus = lines[connectionLabelPosition + 1];
     }
 
+    let previousStatus = 'UNKNOWN';
+
+    if (fs.existsSync('last-status.txt')) {
+      previousStatus = fs.readFileSync('last-status.txt', 'utf8').trim();
+    }
+
+    const statusChanged = previousStatus !== currentStatus;
+
     console.log('');
     console.log('================================');
     console.log('EARTH NETWORKS STATUS');
     console.log('================================');
-    console.log(`Location: Broadneck High School`);
-    console.log(`Alert Status: ${alertStatus}`);
+    console.log('Location: Broadneck High School');
+    console.log(`Previous Status: ${previousStatus}`);
+    console.log(`Current Status: ${currentStatus}`);
     console.log(`Connection: ${connectionStatus}`);
     console.log('================================');
 
-    fs.writeFileSync('current-status.txt', alertStatus);
+    if (statusChanged) {
+      console.log('');
+      console.log('STATUS CHANGED!');
+      console.log(`${previousStatus} --> ${currentStatus}`);
+
+      fs.writeFileSync('last-status.txt', currentStatus);
+      fs.writeFileSync('status-changed.txt', 'YES');
+    } else {
+      console.log('');
+      console.log('No status change.');
+      fs.writeFileSync('status-changed.txt', 'NO');
+    }
 
     await page.screenshot({
       path: 'widget-screenshot.png',
@@ -72,7 +92,7 @@ async function checkWidget() {
     });
 
     console.log('');
-    console.log('SUCCESS: Alert status was read correctly.');
+    console.log('SUCCESS: Weather status check completed.');
 
   } catch (error) {
     console.error('');
