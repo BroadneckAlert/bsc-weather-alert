@@ -1,0 +1,9 @@
+{
+  "name": "bsc-weather-alert",
+  "version": "1.0.0",
+  "description": "Broadneck Soccer Earth Networks weather alert monitor",
+  "private": true,
+  "dependencies": {
+    "playwright": "^1.55.0"
+  }
+}
