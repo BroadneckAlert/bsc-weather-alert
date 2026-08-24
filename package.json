@@ -4,6 +4,7 @@
   "description": "Broadneck Soccer Earth Networks weather alert monitor",
   "private": true,
   "dependencies": {
+    "nodemailer": "^7.0.0",
     "playwright": "^1.55.0"
   }
 }
