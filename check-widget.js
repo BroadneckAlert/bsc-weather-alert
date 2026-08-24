@@ -1,8 +1,70 @@
 const { chromium } = require('playwright');
+const nodemailer = require('nodemailer');
 const fs = require('fs');
 
 const WIDGET_URL =
   'https://oas.earthnetworks.com/widget/ResOASWidget.html?widgetId=53a22493-1a2e-4968-9974-e32868ef58a5';
+
+const LOCATION = 'Broadneck High School';
+
+async function sendAlertEmail(previousStatus, currentStatus, connectionStatus) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPassword = process.env.GMAIL_APP_PASSWORD;
+  const recipients = process.env.ALERT_RECIPIENTS;
+
+  if (!gmailUser || !gmailPassword || !recipients) {
+    throw new Error('Missing Gmail or recipient information.');
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: gmailUser,
+      pass: gmailPassword
+    }
+  });
+
+  const isAllClear = currentStatus.toLowerCase() === 'no alert';
+
+  const subject = isAllClear
+    ? `ALL CLEAR — ${LOCATION}`
+    : `WEATHER ALERT — ${LOCATION}`;
+
+  const message = `
+Broadneck Weather Alert System
+
+Location: ${LOCATION}
+
+Previous Status:
+${previousStatus}
+
+Current Status:
+${currentStatus}
+
+Earth Networks Connection:
+${connectionStatus}
+
+The Earth Networks alert status has changed.
+
+View the live Earth Networks status:
+${WIDGET_URL}
+
+This is an automated weather notification.
+  `.trim();
+
+  console.log('');
+  console.log('Sending status-change email...');
+
+  const info = await transporter.sendMail({
+    from: `"Broadneck Weather Alerts" <${gmailUser}>`,
+    to: recipients,
+    subject: subject,
+    text: message
+  });
+
+  console.log('EMAIL SENT SUCCESSFULLY');
+  console.log(`Message ID: ${info.messageId}`);
+}
 
 async function checkWidget() {
   console.log('Starting Earth Networks check...');
@@ -51,7 +113,10 @@ async function checkWidget() {
 
     let connectionStatus = 'Unknown';
 
-    if (connectionLabelPosition !== -1 && lines[connectionLabelPosition + 1]) {
+    if (
+      connectionLabelPosition !== -1 &&
+      lines[connectionLabelPosition + 1]
+    ) {
       connectionStatus = lines[connectionLabelPosition + 1];
     }
 
@@ -67,7 +132,7 @@ async function checkWidget() {
     console.log('================================');
     console.log('EARTH NETWORKS STATUS');
     console.log('================================');
-    console.log('Location: Broadneck High School');
+    console.log(`Location: ${LOCATION}`);
     console.log(`Previous Status: ${previousStatus}`);
     console.log(`Current Status: ${currentStatus}`);
     console.log(`Connection: ${connectionStatus}`);
@@ -78,11 +143,22 @@ async function checkWidget() {
       console.log('STATUS CHANGED!');
       console.log(`${previousStatus} --> ${currentStatus}`);
 
+      // Send the email BEFORE saving the new status.
+      // If email fails, the program stops and will try again next run.
+      await sendAlertEmail(
+        previousStatus,
+        currentStatus,
+        connectionStatus
+      );
+
       fs.writeFileSync('last-status.txt', currentStatus);
       fs.writeFileSync('status-changed.txt', 'YES');
+
     } else {
       console.log('');
       console.log('No status change.');
+      console.log('No email will be sent.');
+
       fs.writeFileSync('status-changed.txt', 'NO');
     }
 
