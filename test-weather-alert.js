@@ -17,41 +17,65 @@ async function sendTestWeatherAlert() {
     }
   });
 
-  const subject = 'WEATHER ALERT — Broadneck High School';
+  const LOCATION = 'Broadneck Area Fields';
+
+  const subject =
+    `[TEST] BAYS WEATHER ALERT — FIELDS CLOSED — ${LOCATION}`;
 
   const message = `
-Broadneck Weather Alert System
+*** THIS IS A TEST MESSAGE ***
+No actual weather alert has been issued.
 
-Location: Broadneck High School
+BAYS Weather Alert System
+
+Location:
+${LOCATION}
+
+Current Status:
+ACTIVE
+
+FIELDS ARE CLOSED
+
+A lightning alert is currently ACTIVE for the Broadneck area.
+
+All BAYS fields are CLOSED.
+
+No players, coaches, families, or spectators should be on the fields.
+
+Everyone should immediately seek appropriate shelter.
+
+Fields will remain CLOSED until the current Earth Networks status changes to NO ALERT.
+
+Any questions, please reach out to your sport's respective Commissioner/Director.
+
+----------------------------------------
 
 Previous Status:
 No Alert
 
-Current Status:
-TEST WEATHER ALERT
-
 Earth Networks Connection:
 Up
-
-The Earth Networks alert status has changed.
 
 View the live Earth Networks status:
 https://oas.earthnetworks.com/widget/ResOASWidget.html?widgetId=53a22493-1a2e-4968-9974-e32868ef58a5
 
-THIS IS A TEST MESSAGE.
-No actual weather alert has been issued.
+----------------------------------------
+
+This is an automated notification from the BAYS Weather Alert System.
+
+*** TEST ONLY — NO ACTUAL FIELD CLOSURE ***
   `.trim();
 
-  console.log('Sending fake weather alert email...');
+  console.log('Sending test ACTIVE weather alert email...');
 
   const info = await transporter.sendMail({
-    from: `"Broadneck Weather Alerts" <${gmailUser}>`,
+    from: `"BAYS Weather Alert System" <${gmailUser}>`,
     to: recipients,
     subject: subject,
     text: message
   });
 
-  console.log('TEST WEATHER ALERT SENT SUCCESSFULLY');
+  console.log('TEST ACTIVE WEATHER ALERT SENT SUCCESSFULLY');
   console.log(`Message ID: ${info.messageId}`);
 }
 
