@@ -33,7 +33,9 @@ async function sendAlertEmail(
   const recipients = process.env.ALERT_RECIPIENTS;
 
   if (!gmailUser || !gmailPassword || !recipients) {
-    throw new Error('Missing Gmail or recipient information.');
+    throw new Error(
+      'Missing Gmail or recipient information.'
+    );
   }
 
   const transporter = nodemailer.createTransport({
@@ -44,40 +46,115 @@ async function sendAlertEmail(
     }
   });
 
-  const isAllClear =
-    currentStatus.toLowerCase() === 'no alert';
+  const normalizedStatus =
+    currentStatus.toLowerCase().trim();
 
-  const subject = isAllClear
-    ? `ALL CLEAR — ${LOCATION}`
-    : `WEATHER ALERT — ${LOCATION}`;
+  const isActive =
+    normalizedStatus === 'active';
+
+  const isAllClear =
+    normalizedStatus === 'no alert';
+
+  let subject;
+  let statusMessage;
+
+  // --------------------------------------------------
+  // ACTIVE LIGHTNING ALERT
+  // --------------------------------------------------
+
+  if (isActive) {
+    subject =
+      `BAYS WEATHER ALERT — FIELDS CLOSED — ${LOCATION}`;
+
+    statusMessage = `
+FIELDS ARE CLOSED
+
+A lightning alert is currently ACTIVE for the Broadneck area.
+
+All BAYS fields are CLOSED.
+
+No players, coaches, families, or spectators should be on the fields.
+
+Everyone should immediately seek appropriate shelter.
+
+Fields will remain CLOSED until the current Earth Networks status changes to NO ALERT.
+
+Any questions, please reach out to your sport's respective Commissioner/Director.
+    `.trim();
+  }
+
+  // --------------------------------------------------
+  // NO ALERT / ALL CLEAR
+  // --------------------------------------------------
+
+  else if (isAllClear) {
+    subject =
+      `BAYS WEATHER ALERT — ALL CLEAR — ${LOCATION}`;
+
+    statusMessage = `
+NO LIGHTNING-RELATED FIELD CLOSURE
+
+The current Earth Networks status is NO ALERT.
+
+There is no lightning-related field closure in effect.
+
+Fields are again OPEN unless separate direction has been issued indicating otherwise.
+
+Any questions, please reach out to your sport's respective Commissioner/Director.
+    `.trim();
+  }
+
+  // --------------------------------------------------
+  // UNKNOWN / OTHER STATUS
+  // --------------------------------------------------
+
+  else {
+    subject =
+      `BAYS WEATHER STATUS CHANGE — ${LOCATION}`;
+
+    statusMessage = `
+WEATHER STATUS CHANGE
+
+The Earth Networks weather status has changed.
+
+Please review the current status below and use appropriate caution.
+
+Any questions, please reach out to your sport's respective Commissioner/Director.
+    `.trim();
+  }
 
   const message = `
-Broadneck Weather Alert System
+BAYS Weather Alert System
 
-Location: ${LOCATION}
-
-Previous Status:
-${previousStatus}
+Location:
+${LOCATION}
 
 Current Status:
 ${currentStatus}
 
+${statusMessage}
+
+----------------------------------------
+
+Previous Status:
+${previousStatus}
+
 Earth Networks Connection:
 ${connectionStatus}
-
-The Earth Networks alert status has changed.
 
 View the live Earth Networks status:
 ${WIDGET_URL}
 
-This is an automated weather notification.
+----------------------------------------
+
+This is an automated notification from the BAYS Weather Alert System.
   `.trim();
 
   console.log('');
   console.log('Sending status-change email...');
 
   const info = await transporter.sendMail({
-    from: `"Broadneck Weather Alerts" <${gmailUser}>`,
+    from: `"BAYS Weather Alert System" <${gmailUser}>`,
     to: recipients,
     subject: subject,
     text: message
@@ -93,11 +170,21 @@ async function checkWidget() {
   // Do nothing outside official Earth Networks system hours.
   if (!isWithinSystemHours()) {
     console.log('');
-    console.log('Earth Networks system is outside operating hours.');
-    console.log('System hours are 7:00 AM - 10:00 PM Eastern.');
-    console.log('No weather check or email will be performed.');
+    console.log(
+      'Earth Networks system is outside operating hours.'
+    );
+    console.log(
+      'System hours are 7:00 AM - 10:00 PM Eastern.'
+    );
+    console.log(
+      'No weather check or email will be performed.'
+    );
 
-    fs.writeFileSync('status-changed.txt', 'NO');
+    fs.writeFileSync(
+      'status-changed.txt',
+      'NO'
+    );
+
     return;
   }
 
@@ -108,17 +195,23 @@ async function checkWidget() {
   const page = await browser.newPage();
 
   try {
-    console.log('Opening Earth Networks widget...');
+    console.log(
+      'Opening Earth Networks widget...'
+    );
 
     await page.goto(WIDGET_URL, {
       waitUntil: 'domcontentloaded',
       timeout: 60000
     });
 
-    console.log('Waiting for live weather data...');
+    console.log(
+      'Waiting for live weather data...'
+    );
+
     await page.waitForTimeout(15000);
 
-    const pageText = await page.locator('body').innerText();
+    const pageText =
+      await page.locator('body').innerText();
 
     const lines = pageText
       .split('\n')
@@ -129,9 +222,11 @@ async function checkWidget() {
     // READ CONNECTION STATUS FIRST
     // -----------------------------
 
-    const connectionLabelPosition = lines.findIndex(
-      line => line.toLowerCase() === 'connection'
-    );
+    const connectionLabelPosition =
+      lines.findIndex(
+        line =>
+          line.toLowerCase() === 'connection'
+      );
 
     let connectionStatus = 'Unknown';
 
@@ -143,18 +238,33 @@ async function checkWidget() {
         lines[connectionLabelPosition + 1];
     }
 
-    console.log(`Earth Networks Connection: ${connectionStatus}`);
+    console.log(
+      `Earth Networks Connection: ${connectionStatus}`
+    );
 
     // If the Earth Networks system is not connected,
     // DO NOT send an alert and DO NOT change the saved status.
-    if (connectionStatus.toLowerCase() !== 'up') {
+    if (
+      connectionStatus.toLowerCase() !== 'up'
+    ) {
       console.log('');
-      console.log('EARTH NETWORKS CONNECTION IS NOT UP.');
-      console.log('Weather status will NOT be processed.');
-      console.log('No email will be sent.');
-      console.log('Saved alert status will NOT be changed.');
+      console.log(
+        'EARTH NETWORKS CONNECTION IS NOT UP.'
+      );
+      console.log(
+        'Weather status will NOT be processed.'
+      );
+      console.log(
+        'No email will be sent.'
+      );
+      console.log(
+        'Saved alert status will NOT be changed.'
+      );
 
-      fs.writeFileSync('status-changed.txt', 'NO');
+      fs.writeFileSync(
+        'status-changed.txt',
+        'NO'
+      );
 
       await page.screenshot({
         path: 'widget-screenshot.png',
@@ -168,9 +278,11 @@ async function checkWidget() {
     // READ ALERT STATUS
     // -----------------------------
 
-    const alertLabelPosition = lines.findIndex(
-      line => line.toLowerCase() === 'alerts'
-    );
+    const alertLabelPosition =
+      lines.findIndex(
+        line =>
+          line.toLowerCase() === 'alerts'
+      );
 
     if (alertLabelPosition === -1) {
       throw new Error(
@@ -193,9 +305,14 @@ async function checkWidget() {
 
     let previousStatus = 'UNKNOWN';
 
-    if (fs.existsSync('last-status.txt')) {
+    if (
+      fs.existsSync('last-status.txt')
+    ) {
       previousStatus = fs
-        .readFileSync('last-status.txt', 'utf8')
+        .readFileSync(
+          'last-status.txt',
+          'utf8'
+        )
         .trim();
     }
 
@@ -203,14 +320,30 @@ async function checkWidget() {
       previousStatus !== currentStatus;
 
     console.log('');
-    console.log('================================');
-    console.log('EARTH NETWORKS STATUS');
-    console.log('================================');
-    console.log(`Location: ${LOCATION}`);
-    console.log(`Previous Status: ${previousStatus}`);
-    console.log(`Current Status: ${currentStatus}`);
-    console.log(`Connection: ${connectionStatus}`);
-    console.log('================================');
+    console.log(
+      '================================'
+    );
+    console.log(
+      'EARTH NETWORKS STATUS'
+    );
+    console.log(
+      '================================'
+    );
+    console.log(
+      `Location: ${LOCATION}`
+    );
+    console.log(
+      `Previous Status: ${previousStatus}`
+    );
+    console.log(
+      `Current Status: ${currentStatus}`
+    );
+    console.log(
+      `Connection: ${connectionStatus}`
+    );
+    console.log(
+      '================================'
+    );
 
     // -----------------------------
     // STATUS CHANGED
@@ -218,7 +351,9 @@ async function checkWidget() {
 
     if (statusChanged) {
       console.log('');
-      console.log('STATUS CHANGED!');
+      console.log(
+        'STATUS CHANGED!'
+      );
       console.log(
         `${previousStatus} --> ${currentStatus}`
       );
@@ -230,6 +365,7 @@ async function checkWidget() {
        * The monitor can therefore try again during
        * the next scheduled check.
        */
+
       await sendAlertEmail(
         previousStatus,
         currentStatus,
@@ -245,11 +381,14 @@ async function checkWidget() {
         'status-changed.txt',
         'YES'
       );
-
     } else {
       console.log('');
-      console.log('No status change.');
-      console.log('No email will be sent.');
+      console.log(
+        'No status change.'
+      );
+      console.log(
+        'No email will be sent.'
+      );
 
       fs.writeFileSync(
         'status-changed.txt',
