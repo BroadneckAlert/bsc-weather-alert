@@ -20,11 +20,11 @@ async function sendTestWeatherAlert() {
   const LOCATION = 'Broadneck Area Fields';
 
   const subject =
-    `[TEST] BAYS WEATHER ALERT — FIELDS CLOSED — ${LOCATION}`;
+    `[TEST] BAYS WEATHER ALERT — ALL CLEAR — ${LOCATION}`;
 
   const message = `
 *** THIS IS A TEST MESSAGE ***
-No actual weather alert has been issued.
+No actual weather alert or field status change has been issued.
 
 BAYS Weather Alert System
 
@@ -32,26 +32,22 @@ Location:
 ${LOCATION}
 
 Current Status:
-ACTIVE
+NO ALERT
 
-FIELDS ARE CLOSED
+NO LIGHTNING-RELATED FIELD CLOSURE
 
-A lightning alert is currently ACTIVE for the Broadneck area.
+The current Earth Networks status is NO ALERT.
 
-All BAYS fields are CLOSED.
+There is no lightning-related field closure in effect.
 
-No players, coaches, families, or spectators should be on the fields.
-
-Everyone should immediately seek appropriate shelter.
-
-Fields will remain CLOSED until the current Earth Networks status changes to NO ALERT.
+Fields are again OPEN unless separate direction has been issued indicating otherwise.
 
 Any questions, please reach out to your sport's respective Commissioner/Director.
 
 ----------------------------------------
 
 Previous Status:
-No Alert
+Active
 
 Earth Networks Connection:
 Up
@@ -63,10 +59,10 @@ https://oas.earthnetworks.com/widget/ResOASWidget.html?widgetId=53a22493-1a2e-49
 
 This is an automated notification from the BAYS Weather Alert System.
 
-*** TEST ONLY — NO ACTUAL FIELD CLOSURE ***
+*** TEST ONLY — NO ACTUAL FIELD STATUS CHANGE ***
   `.trim();
 
-  console.log('Sending test ACTIVE weather alert email...');
+  console.log('Sending test ALL CLEAR weather alert email...');
 
   const info = await transporter.sendMail({
     from: `"BAYS Weather Alert System" <${gmailUser}>`,
@@ -75,7 +71,7 @@ This is an automated notification from the BAYS Weather Alert System.
     text: message
   });
 
-  console.log('TEST ACTIVE WEATHER ALERT SENT SUCCESSFULLY');
+  console.log('TEST ALL CLEAR WEATHER ALERT SENT SUCCESSFULLY');
   console.log(`Message ID: ${info.messageId}`);
 }
 
